@@ -40,22 +40,25 @@ To write data to a file instead of printing it to the standard output, you can o
 
 **Language-defined functions**
 
-| Name    | No. parameters | Description |
-|---------|----------------|-------------|
-| `+`     | 2              | Sum the last two items popping them from stack and push the result back to the stack. |
-| `-`     | 2              | Substract the last two items popping them from stack and push the result back to the stack. |
-| `*`     | 2              | Multiply the last two items popping them from stack and push the result back to the stack. |
-| `/`     | 2              | Divide the last two items popping them from stack and push the result back to the stack. |
-| `sin`   | 1              | Push the sine function of the last item back to the stack. |
-| `cos`   | 1              | Push the cosine function of the last item back to the stack. |
-| `tan`   | 1              | Push the tangent function of the last item back to the stack. |
-| `pow`   | 2              | Raise the last item to the second-last-itemth power and push the result to the stack. |
-| `sqrt`  | 1              | Push the square root of the last item back to the stack. |
-| `print` | 1              | Pop the last item from stack and print it to standard output or write it to a file if include header is defined. |
-| `pop`   | 1              | Pop the last item from stack. |
-| `dup`   | 1              | Duplicate the last item on stack. |
-| `drop`  | 2              | Pop the last two items on stack, as the opposite of `dup`. |
-| `swap`  | 2              | Swap the last two items on stack. |
+| Name      | No. parameters | Description |
+|-----------|----------------|-------------|
+| `+`       | 2              | Sum the last two items popping them from stack and push the result back. |
+| `-`       | 2              | Substract the last two items popping them from stack and push the result back. |
+| `*`       | 2              | Multiply the last two items popping them from stack and push the result back. |
+| `/`       | 2              | Divide the last two items popping them from stack and push the result back. |
+| `pow`     | 2              | Raise the last item to the second-last-itemth power and push the result to the stack. |
+| `sqrt`    | 1              | Push the square root of the last item back to the stack. |
+| `sin`     | 1              | Push the sine function of the last item back to the stack. |
+| `cos`     | 1              | Push the cosine function of the last item back to the stack. |
+| `tan`     | 1              | Push the tangent function of the last item back to the stack. |
+| `exp`     | 1              | Push _e_ raised to the power of last item back to the stack. |
+| `log`     | 1              | Push the natural logarithm of the last item back to the stack. |
+| `print`   | 1              | Pop the last item from stack and print it to standard output or write it to a file if include header is defined. |
+| `println` | 1              | Pop the last item from stack and write it to the output with a line break at the end. |
+| `pop`     | 1              | Pop the last item from stack. |
+| `dup`     | 1              | Duplicate the last item on stack. |
+| `drop`    | 2              | Pop the last two items on stack, as the opposite of `dup`. |
+| `swap`    | 2              | Swap the last two items on stack. |
 
 **Language-defined constants**
 
@@ -95,8 +98,8 @@ A function is a block of atoms that can be executed many times without the need 
 (base 4)
 (height 6)
 
-(triangle_area * 2 swap / print)
-("circle area" * print)
+(triangle_area * 2 swap / println)
+("circle area" * println)
 ```
 
 To call a custom user-defined function from the code, you write a '@' symbol followed by the name of the function. For example:
@@ -134,15 +137,15 @@ print  {stack: []}        <- pop              }
 (m2 $1)
 (d  $2)
 
-_"m1" @m1 print
-_"m2" @m2 print
-_"d"  @d print
+_"m1" @m1 println
+_"m2" @m2 println
+_"d"  @d println
 
 2 @d pow       {first:  d^2}
 @G @m1 * @m2 * {second: G*m1*m2}
 /              {result: second / first}
 
-_"F=" print
+_"F=" println
 ```
 
 ## License 
