@@ -15,9 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import sys
+from errorman import StepError
 
 class Stack:
     stack = []
+    shell_mode = None
+    
+    def __init__ (self, shell_mode = False):
+        self.shell_mode = shell_mode
+        
+    def print_stack (self):
+        stack = self.stack
+        stack = [
+            str (i).rstrip ('0').rstrip ('.') 
+            if '.' in str(i) else str(i)
+            for i in stack
+        ]
+        print ('[', end='')
+        print (*stack, sep=', ', end='')
+        print (']')
     
     # Basic stack operations
     
@@ -26,6 +42,9 @@ class Stack:
     
     def push(self, element):
         self.stack.append(element)
+        
+    def clear (self):
+        self.stack = []
     
     # Complex stack  operations
     
@@ -48,4 +67,10 @@ class Stack:
         if len(self.stack) >= min_params:
             return True
         else:
-            sys.exit("Stack error: Missing parameters: Provided " + str(len(self.stack)) + " of " + str(min_params) + " for function '" + str(atom_function) + "'")
+            StepError.error(
+                StepError.MISSING_PARAMS, 
+                self.shell_mode,
+                str (len (self.stack)),
+                str (min_params),
+                str (atom_function)
+            )

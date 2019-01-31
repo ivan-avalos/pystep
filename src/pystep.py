@@ -20,20 +20,25 @@ import sys
 import shlex
 from stackman import Stack
 from stepman import Step
+from shellman import Shell
 
 help_message = '''Usage: pystep file ...
-Or:    pystep --help
+Or:    pystep [-i|-h]
 
 Options:
-    --help  Show this help menu
+  -i  Start interactive shell
+  -h  Show this help menu
 '''
 
 # Verify arguments
 if len(sys.argv) <= 1:
     sys.exit(help_message)
 else:
-    if sys.argv[1] == '--help':
+    if sys.argv[1] == '-h':
         sys.exit(help_message)
+    elif sys.argv[1] == '-i':
+        Shell ().start ()
+        sys.exit (0)
 
 # Read input
 fileName = sys.argv[1]

@@ -17,30 +17,34 @@
 import sys
 import shlex
 import math
+from errorman import StepError
 from stackman import Stack
 
 class Step:
+    shell_mode = False
     output = None
     stack = Stack()
+    params = []
     user_functions = {}
     
     def __init__(self, content, params = []):
+        self.shell_mode = False
+        self.parse_params(params)
+        self.eval(content)
+        
+    def __init__(self):
+        self.shell_mode = True
+        self.stack = Stack (shell_mode = True)
+        
+    def parse_params (self, params = []):
         # Convert string parameters to float
-        self.params = []
         for i in params:
-            if self.is_float(i):
-                self.params.append(float(i))
+            if self.is_float (i):
+                self.params.append (float (i));
             else:
-                sys.exit('Step error: invalid parameter ' + i)
-        
-        # Intermediate process
-        content = self.extract_output(content)
-        content = self.remove_comments(content)
-        content = self.extract_user_functions(content)
-        
-        # Eval intermediate code
-        self.eval(shlex.split(content))
-        
+                StepError.error (
+                    StepError.INVALID_PARAM, self.shell_mode, i)
+    
     def extract_output(self, content):
         output = []
         lines = content.split('\n')
@@ -71,10 +75,11 @@ class Step:
                 func = shlex.split(recollector)
                 if len(func) >= 2:
                     func_name = func[0]
-                    func_body = func[1:]
+                    func_body = ' '.join(func[1:])
                     self.user_functions[func_name] = func_body
                 else:
-                    sys.exit("Step error: function must contain title and body")
+                    StepError.error (
+                        StepError.FUNC_TITLE_BODY, self.shell_mode)
                     
                 # Restore state and clear recollector
                 in_function = False
@@ -101,6 +106,14 @@ class Step:
         return output
     
     def eval(self, content):
+        # Intermediate process
+        if not self.shell_mode:
+            content = self.extract_output(content)
+            content = self.remove_comments(content)
+            
+        content = self.extract_user_functions(content)
+        content = shlex.split (content)
+        
         # Atom functions
         atom_function = {
             # Arithmetic functions
@@ -135,7 +148,6 @@ class Step:
             if self.is_float(atom):
                 # Push atom to stack
                 self.stack.push(float(atom))
-                continue
             elif atom in atom_function:
                 # Eval step function
                 atom_function[atom]()
@@ -145,9 +157,14 @@ class Step:
             elif atom[0] == '@':
                 # Eval user defined function
                 if atom[1:] in self.user_functions:
-                        self.eval(self.user_functions[atom[1:]])
+                    self.eval(self.user_functions[atom[1:]])
+                    return
                 else:
-                    sys.exit("Step error: undefined user defined function \"" + atom + "\"")
+                    StepError.error(
+                        StepError.UNDEF_FUNC_USER,
+                        self.shell_mode,
+                        atom
+                    )
             elif atom[0] == '$':
                 if atom[1:].isdigit() and len(atom) > 1:
                     index = atom[1:]
@@ -155,9 +172,17 @@ class Step:
                         # Push param
                         self.stack.push(self.params[int(index)])
                     except IndexError:
-                        sys.exit("Step error: invalid param index $" + index)
+                        StepError.error (
+                            StepError.INVALID_PARAM_INDEX, 
+                            self.shell_mode,
+                            atom
+                        )
                 else:
-                    sys.exit("Step error: invalid param index $" + atom[1:])
+                    StepError.error (
+                        StepError.INVALID_PARAM_INDEX,
+                        self.shell_mode,
+                        atom
+                    )
             elif atom[0] == '_':
                 # Print single word to stdout or file
                 string = bytes(atom[1:], "utf-8").decode('unicode_escape')
@@ -166,7 +191,14 @@ class Step:
                 else:
                     self.output.write(string)
             else:
-                sys.exit("Step error: undefined function \"" + atom + "\"")
+                StepError.error (
+                    StepError.UNDEF_FUNC,
+                    self.shell_mode,
+                    atom
+                )
+        
+        if self.shell_mode:
+            self.stack.print_stack ()
                 
     # Math functions
     
@@ -181,35 +213,35 @@ class Step:
     # Add two numbers together 
     def __sum(self):
         # params: 2
-        self.stack.check_params(2, '+')
+        if not self.stack.check_params(2, '+'): return
         result = self.stack.pop() + self.stack.pop()
         self.stack.push(result)
     
     # Substract two numbers
     def __sub(self):
         # params: 2
-        self.stack.check_params(2, '-')
+        if not self.stack.check_params(2, '-'): return
         result = self.stack.pop() - self.stack.pop()
         self.stack.push(result)
     
     # Multiply two numbers
     def __mul(self):
         # params: 2
-        self.stack.check_params(2, '*')
+        if not self.stack.check_params(2, '*'): return
         result = self.stack.pop() * self.stack.pop()
         self.stack.push(result)
     
     # Divide two numbers
     def __div(self):
         # params: 2
-        self.stack.check_params(2, '/')
+        if not self.stack.check_params(2, '/'): return
         result = self.stack.pop() / self.stack.pop()
         self.stack.push(result)
         
     # Raise a number to the nth power    
     def __pow(self):
         # params: 2
-        self.stack.check_params(2, 'pow')
+        if not self.stack.check_params(2, 'pow'): return
         x = self.stack.pop()
         y = self.stack.pop()
         result = math.pow(x, y)
@@ -218,60 +250,60 @@ class Step:
     # Square root of a number
     def __sqrt(self):
         # params: 1
-        self.stack.check_params(1, 'sqrt')
+        if not self.stack.check_params(1, 'sqrt'): return
         result = math.sqrt(self.stack.pop())
         self.stack.push(result)
     
     # Sine function of a number
     def __sin(self):
         # params: 1
-        self.stack.check_params(1, 'sin')
+        if not self.stack.check_params(1, 'sin'): return
         result = math.sin(self.stack.pop())
         self.stack.push(result)
     
     # Cosine funcion of a number
     def __cos(self):
         # params: 1
-        self.stack.check_params(1, 'cos')
+        if not self.stack.check_params(1, 'cos'): return
         result = math.cos(self.stack.pop())
         self.stack.push(result)
     
     # Tangent function of a number
     def __tan(self):
         # params: 1
-        self.stack.check_params(1, 'tan')
+        if not self.stack.check_params(1, 'tan'): return
         result = math.tan(self.stack.pop())
         self.stack.push(result)
         
     def __exp(self):
         # params: 1
-        self.stack.check_params(1, 'exp')
+        if not self.stack.check_params(1, 'exp'): return
         result = math.exp(self.stack.pop())
         self.stack.push(result)
         
     def __log(self):
         # params: 1
-        self.stack.check_params(1, 'log')
+        if not self.stack.check_params(1, 'log'): return
         result = math.log(self.stack.pop())
         self.stack.push(result)
     
     # Clear stack
     def __clr(self):
-        self.stack = Stack()
+        self.stack.clear ()
     
     # Pop and print top of stack
     def __pout(self):
         # params: 1
-        self.stack.check_params(1, 'print')
+        if not self.stack.check_params(1, 'print'): return
         if self.output is None:
-            print(self.stack.pop(), end='')
+            print(self.stack.pop(), '')
         else:
             self.output.write(str(self.stack.pop()))
             
     # Pop and print top of stack - with line break
     def __plout(self):
         # params: 1
-        self.stack.check_params(1, 'println')
+        if not self.stack.check_params(1, 'println'): return
         if self.output is None:
             print(self.stack.pop())
         else:
@@ -280,23 +312,23 @@ class Step:
     # Pop without print
     def __pop(self):
         # params: 1
-        self.stack.check_params(1, 'pop')
+        if not self.stack.check_params(1, 'pop'): return
         self.stack.pop()
     
     # Duplicate the value on top of stack
     def __dup(self):
         # params: 1
-        self.stack.check_params(1, 'dup')
+        if not self.stack.check_params(1, 'dup'): return
         self.stack.dup()
     
     # Pop last two numbers on stack without print
     def __drop(self):
         # params: 2
-        self.stack.check_params(2, 'drop')
+        if not self.stack.check_params(2, 'drop'): return
         self.stack.drop()
     
     # Swap positions of last two numbers on stack
     def __swap(self):
         # params: 2
-        self.stack.check_params(2, 'swap')
+        if not self.stack.check_params(2, 'swap'): return
         self.stack.swap()
